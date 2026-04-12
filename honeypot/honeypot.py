@@ -14,6 +14,7 @@ class Honeypot(commands.Cog):
             "honeypot_channel_id": None,
             "honeypot_immune_role_id": None,
             "honeypot_ban_message": "You have been banned from {server} because your account appears to be hijacked. If you believe this is a mistake, please contact support.",
+            "honeypot_log_channel_id": None,
         }
         self.honeypot_immune_role = None
 
@@ -30,6 +31,7 @@ class Honeypot(commands.Cog):
             upsert=True,
         )
         self.honeypot_immune_role = self.bot.guild.get_role(self.config["honeypot_immune_role_id"])
+        self.honeypot_log_channel = self.bot.guild.get_channel(self.config["honeypot_log_channel_id"])
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -39,7 +41,7 @@ class Honeypot(commands.Cog):
         if message.author.bot:
             return
 
-        if not self.config["honeypot_channel_id"] or not self.config["honeypot_role_id"]:
+        if not self.config["honeypot_channel_id"]:
             return
 
         if message.channel.id != self.config["honeypot_channel_id"]:
@@ -49,11 +51,17 @@ class Honeypot(commands.Cog):
         if self.honeypot_immune_role in message.author.roles:
             return
 
+        m = None
         try:
-            await self.bot.guild.ban(message.author, reason=self.config["honeypot_ban_message"].format(server=self.bot.guild.name), delete_message_days=1)
-            await message.delete()
+            m = await message.author.send(self.config["honeypot_ban_message"].format(server=self.bot.guild.name))
         except discord.Forbidden:
             pass
+
+        await self.bot.guild.ban(message.author, reason="Honeypot triggered. User is likely compromised.", delete_message_days=1)
+        if m:
+            await self.honeypot_log_channel.send(f"User {message.author} ({message.author.id}) was banned for triggering the honeypot. User was successfully sent the ban message.")
+        else:
+            await self.honeypot_log_channel.send(f"User {message.author} ({message.author.id}) was banned for triggering the honeypot. Failed to send the ban message (DMs likely closed).")
 
     @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
     @commands.group(name="honeypot", invoke_without_command=True)
@@ -80,7 +88,7 @@ class Honeypot(commands.Cog):
     async def set_immune_role(self, ctx, role: discord.Role):
         self.config["honeypot_immune_role_id"] = role.id
         await self.update_config()
-        await ctx.send(f"Honeypot immune role set to {role.mention}.")
+        await ctx.send(f"Honeypot immune role set to {role.name}.")
 
     @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
     @honeypot.command(name="setbanmessage")
@@ -88,6 +96,13 @@ class Honeypot(commands.Cog):
         self.config["honeypot_ban_message"] = message
         await self.update_config()
         await ctx.send("Honeypot ban message updated.")
+
+    @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
+    @honeypot.command(name="setlogchannel")
+    async def set_log_channel(self, ctx, channel: discord.TextChannel):
+        self.config["honeypot_log_channel_id"] = channel.id
+        await self.update_config()
+        await ctx.send(f"Honeypot log channel set to {channel.mention}.")
 
 async def setup(bot):
     await bot.add_cog(Honeypot(bot))
