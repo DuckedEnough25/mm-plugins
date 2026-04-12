@@ -52,29 +52,34 @@ class Honeypot(commands.Cog):
         except discord.Forbidden:
             pass
 
-    @commands.Group(name="honeypot", invoke_without_command=True)
+    @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
+    @commands.group(name="honeypot", invoke_without_command=True)
     async def honeypot(self, ctx):
         """Advanced menu settings."""
         await ctx.send_help(ctx.command)
 
+    @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
     @honeypot.command(name="toggle")
     async def toggle(self, ctx):
         self.config["enabled"] = not self.config["enabled"]
         await self.update_config()
         await ctx.send(f"Honeypot is now {'enabled' if self.config['enabled'] else 'disabled'}.")
 
+    @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
     @honeypot.command(name="setchannel")
     async def set_channel(self, ctx, channel: discord.TextChannel):
         self.config["honeypot_channel_id"] = channel.id
         await self.update_config()
         await ctx.send(f"Honeypot channel set to {channel.mention}.")
-    
+
+    @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
     @honeypot.command(name="setimmune")
     async def set_immune_role(self, ctx, role: discord.Role):
         self.config["honeypot_immune_role_id"] = role.id
         await self.update_config()
         await ctx.send(f"Honeypot immune role set to {role.mention}.")
 
+    @checks.has_permissions(PermissionLevel.ADMINISTRATOR)
     @honeypot.command(name="setbanmessage")
     async def set_ban_message(self, ctx, *, message):
         self.config["honeypot_ban_message"] = message
