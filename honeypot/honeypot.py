@@ -58,6 +58,8 @@ class Honeypot(commands.Cog):
             pass
 
         await self.bot.guild.ban(message.author, reason="Honeypot triggered. User is likely compromised.", delete_message_days=1)
+        if not self.honeypot_log_channel:
+            self.honeypot_log_channel = await self.bot.guild.fetch_channel(self.config["honeypot_log_channel_id"])
         if m:
             await self.honeypot_log_channel.send(f"User {message.author} ({message.author.id}) was banned for triggering the honeypot. User was successfully sent the ban message.")
         else:
