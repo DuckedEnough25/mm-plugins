@@ -57,6 +57,7 @@ class Honeypot(commands.Cog):
         except discord.Forbidden:
             pass
 
+        await message.delete()
         await self.bot.guild.ban(message.author, reason="Honeypot triggered. User is likely compromised.", delete_message_days=1)
         if not self.honeypot_log_channel:
             self.honeypot_log_channel = await self.bot.guild.fetch_channel(self.config["honeypot_log_channel_id"])
