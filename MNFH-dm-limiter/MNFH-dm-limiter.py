@@ -8,7 +8,9 @@ def message_check(message):
         return False
     elif message.author.guild_permissions.manage_messages:
         return False
-    return len(message.content + message.message_snapshots[0].content) > 100
+    elif len(message.message_snapshots) == 0:
+        return len(message.content) > 100
+    return len(message.message_snapshots[0].content) > 100
 
 class MNFHDMLimiter(commands.Cog):
     def __init__(self, bot):
