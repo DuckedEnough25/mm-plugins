@@ -17,6 +17,7 @@ class Honeypot(commands.Cog):
             "honeypot_log_channel_id": None,
         }
         self.honeypot_immune_role = None
+        self.honeypot_log_channel = None
 
     async def cog_load(self):
         self.config = await self.db.find_one({"_id": "honeypot"})
@@ -46,7 +47,6 @@ class Honeypot(commands.Cog):
 
         if message.channel.id != self.config["honeypot_channel_id"]:
             return
-
 
         if self.honeypot_immune_role in message.author.roles:
             return
